@@ -23,94 +23,107 @@ App.Main.prototype = {
 
     create: function(){
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        this.game.add.sprite(0,0,"sky");
+        //create the autoScrolls
         this.clouds = this.game.add.tileSprite(0, 0, 800, 600, "cloud");
-        //this.game.add.sprite(100,100,"star");
-        this.game.add.sprite(100,100,"cactus");
+        this.clouds.autoScroll(-100,0);
+        this.cursors = this.game.input.keyboard.createCursorKeys();
         this.platforms = this.game.add.group();
         this.platforms.enableBody = true;
+
+        // get world width
+        this.worldWidth = this.game.world.width;
+        
         this.ground = this.platforms.create(0,this.game.world.height - 64, "ground");
         this.ground.scale.setTo(2,2);
         this.ground.body.immovable =true;
         
-        //this.movingBackground=this.game.add.tileSprite(0,0,800,600,"sky");
         this.character = new Character(this.game,25,this.game.world.height-150,"dude");
-        this.obstacles = new StarObstacle(this.game,this.game.world.width,this.game.world.height-100,"star");
+
+        // CREATE OBSTACLE
+        this.obstacleGroup = []
+        var firstRand = randInteger(this.game,this.game.world.width,this.game.world.width/2 * 3);
+        for(var i = 0; i < 2; i++){
+            this.obstacleGroup.push(new Cactus(this.game,firstRand+i*400,490,"cactus",0.5,0.5));
+        }
+        //this.obstacle = new Cactus(this.game,100,100,"cactus",0.5,0.5);
+        //this.obstacle.getHeight();
+        
+        //this.obstacle = new Cactus(this.game,100,200,"cactus",0.2,0.2);
+        //this.obstacle.getHeight();
+        //console.log(this.obstacle);
     },
     update : function(){
-        this.clouds.tilePosition.x-=2;
-        if (this.obstacles.obstacle.body.x<0) {
-        this.obstacles = new StarObstacle(this.game, this.game.world.width, this.game.world.height - 100, "star");
-            
-        }
+        /*
+        * player updates
+        */
         
-        this.obstacles.obstacle.body.velocity.x=-300;
-
         var player = this.character.player;
         this.hitPlatform = this.game.physics.arcade.collide(this.character.player,this.platforms);
+        //this.hitCactus = this.game.physics.collide(player, this.obstacleGroup[0].cactus)
         this.cursors = this.game.input.keyboard.createCursorKeys();
-
         this.character.player.body.velocity.x = 0;
         this.character.player.animations.play("right");
-        if (this.obstacles.obstacle.body.x<170 && this.character.player.body.touching.down && this.hitPlatform) {
-            this.character.player.body.velocity.y = -250;
+        
+        /*
+         * obstacle updates 
+         */
+
+        if(this.obstacleGroup[0].getX() < 100){
+            this.obstacleGroup.splice(0,1);
+            var newRand = randInteger(this.game,this.worldWidth,this.worldWidth/2 * 3);
+            //console.log(this.obstacleGroup[0].cactus.body.x);
+            if(getDistBetween(newRand,this.obstacleGroup[0].cactus.body.x) < 200) newRand+=200;
+            this.obstacleGroup.push(new Cactus(this.game,newRand,490,"cactus",0.5,0.5));
+        }
+
+
+        
+        /**
+         * semi debugging here
+         */
+        if (this.cursors.up.isDown && player.body.touching.down && this.hitPlatform)
+        {
+            player.body.velocity.y = -300;
         }
     }
 };
 
 var Character = function(game,x, y,img){
-   // Phaser.Sprite.call(this,game,x,y,"dude");
     this.x = x;
     this.y = y;
     this.player = game.add.sprite(x,y,img);
     //  We need to enable physics on the player
     game.physics.arcade.enable(this.player);
-
     //  Player physics properties. Give the little guy a slight bounce.
     this.player.body.bounce.y = 0.0;
     this.player.body.gravity.y = 600;
     this.player.body.collideWorldBounds = true;
-
     //  Our two animations, walking left and right.
     this.player.animations.add('left', [0, 1, 2, 3], 10, true);
     this.player.animations.add('right', [5, 6, 7, 8], 10, true);
-    
+
 };
-
-var StarObstacle = function(game,x,y,img){
-    this.obstacle = game.add.sprite(x,y,img);
-    game.physics.arcade.enable(this.obstacle);
-    this.obstacle.body.collideWorldBounds = false;
-    this.obstacle.scale.setTo(2, 2);
-}
-
 /*
     Obstacle class
 */
+var Cactus = function(game,x, y,img,scale){
+    this.cactus = game.add.sprite(x,y,img);
+    game.physics.arcade.enable(this.cactus);
+    this.cactus.scale.setTo(scale,scale);
+    this.cactus.body.velocity.x = -200
+};
 
-
-
-/*
-
-if (this.cursors.left.isDown) {
-    this.character.player.body.velocity.x = -150;
-    if (player.body.touching.down)
-        this.character.player.animations.play("left");
-    else
-        player.frame = 1;
-} else if (this.cursors.right.isDown) {
-    this.character.player.body.velocity.x = 150;
-    if (player.body.touching.down)
-        this.character.player.animations.play("right");
-    else
-        player.frame = 6;
-} else {
-    this.character.player.animations.stop();
-    this.character.player.frame = 4;
+Cactus.prototype.getX = function(){
+    return this.cactus.body.x;
+}
+Cactus.prototype.getHeight = function(){
+    console.log(this.cactus.scale.x * this.cactus.body.height);
 }
 
-if (this.cursors.up.isDown && this.character.player.body.touching.down && this.hitPlatform) {
-    this.character.player.body.velocity.y = -200;
-}
 
-*/
+function randInteger(game,min,max){
+    return game.rnd.integerInRange(min,max)
+}
+function getDistBetween(x, y){
+    return Math.abs(x - y);
+}
