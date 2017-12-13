@@ -8,7 +8,10 @@ window.onload = function() {
 var App ={};
 
 App.Main = function(game){
-
+	this.STATE_INIT = 1;
+	this.STATE_START = 2;
+	this.STATE_PLAY = 3;
+	this.STATE_GAMEOVER = 4;
 }
 
 App.Main.prototype = {
@@ -37,8 +40,14 @@ App.Main.prototype = {
         this.ground.scale.setTo(2,2);
         this.ground.body.immovable =true;
         
+        this.GA = new GeneticAlgorithm(10,4);
+        
         this.character = new Character(this.game,25,this.game.world.height-150,"dude");
-
+        /*this.characterGroup  = []
+        for(var i = 0; i < this.GA.max_units; i++){
+            this.characterGroup.push(new Character(this.game,25,this.game.world.height-150,"dude"));
+        }
+*/
         // CREATE OBSTACLE
         this.obstacleGroup = []
         var firstRand = randInteger(this.game,this.game.world.width,this.game.world.width/2 * 3);
@@ -51,15 +60,33 @@ App.Main.prototype = {
         //this.obstacle = new Cactus(this.game,100,200,"cactus",0.2,0.2);
         //this.obstacle.getHeight();
         //console.log(this.obstacle);
+        this.state = this.STATE_INIT;
     },
     update : function(){
+        /*
+        switch(this.state){
+            case this.STATE_INIT:
+                //initialize the genetic algorithm
+                this.state = this.STATE_START;
+                break;
+            case this.STATE_START:
+                //start and reset the game
+                break;
+            case this.STATE_PLAY: 
+                // play Flappy Bird game by using genetic algorithm AI
+                break;
+            case this.STATE_GAMEOVER: 
+                // when all birds are killed evolve the population
+                break;
+        }
+
         /*
         * player updates
         */
         
-        var player = this.character.player;
+        player = this.character.player;
         this.hitPlatform = this.game.physics.arcade.collide(this.character.player,this.platforms);
-        //this.hitCactus = this.game.physics.collide(player, this.obstacleGroup[0].cactus)
+
         this.cursors = this.game.input.keyboard.createCursorKeys();
         this.character.player.body.velocity.x = 0;
         this.character.player.animations.play("right");
@@ -68,16 +95,13 @@ App.Main.prototype = {
          * obstacle updates 
          */
 
-        if(this.obstacleGroup[0].getX() < 100){
+        if(this.obstacleGroup[0].getX() < 0){
             this.obstacleGroup.splice(0,1);
             var newRand = randInteger(this.game,this.worldWidth,this.worldWidth/2 * 3);
             //console.log(this.obstacleGroup[0].cactus.body.x);
             if(getDistBetween(newRand,this.obstacleGroup[0].cactus.body.x) < 200) newRand+=200;
             this.obstacleGroup.push(new Cactus(this.game,newRand,490,"cactus",0.5,0.5));
         }
-
-
-        
         /**
          * semi debugging here
          */
@@ -85,9 +109,17 @@ App.Main.prototype = {
         {
             player.body.velocity.y = -300;
         }
+        var hit = this.game.physics.arcade.collide(player, this.obstacleGroup[0].cactus, collhandler,null, this);
+        
+        if(hit) {
+            console.log("hot");
+        }
+        //console.log(getDistBetween(player.body.x, this.obstacleGroup[0].cactus.body.x));
     }
 };
-
+//for handling collisions
+function collhandler(){
+}
 var Character = function(game,x, y,img){
     this.x = x;
     this.y = y;
@@ -111,6 +143,7 @@ var Cactus = function(game,x, y,img,scale){
     game.physics.arcade.enable(this.cactus);
     this.cactus.scale.setTo(scale,scale);
     this.cactus.body.velocity.x = -200
+    this.cactus.animations.frame = 2;
 };
 
 Cactus.prototype.getX = function(){
