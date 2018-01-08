@@ -114,7 +114,8 @@ App.Main.prototype = {
                             if(getDistBetween(newRand,this.obstacleGroup[0].cactus.body.x) < 200) newRand+=200;
                             this.obstacleGroup.push(new Cactus(this.game,newRand,490,"cactus",0.5,0.5));
                         }
-                        //console.log(this.characterGroup[i]);
+                        //console.log(this.characterGroup[i]); 
+                        
                        this.GA.activateBrain(this.characterGroup[i], this.target);
                     }
                     
