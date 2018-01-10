@@ -63,7 +63,7 @@ App.Main.prototype = {
         this.state = this.STATE_INIT;
     },
     update : function(){
-      
+        console.log(this.state);
         switch(this.state){
             case this.STATE_INIT:
                 //initialize the genetic algorithm
@@ -75,13 +75,22 @@ App.Main.prototype = {
             case this.STATE_START:
                 //start and reset the game
                 this.target = {x0:0,x1:1};
-                
-
+                // Create new gen of characters
+                for (var i = 0; i < this.GA.max_units; i++) {
+                  this.characterGroup.push(new Character(this.game, 25, this.game.world.height - 150, "dude", i));
+                }
+                // create new obstacles
+                if(this.obstacleGroup.length != 0){
+                    this.obstacleGroup.splice(0, 1);
+                    this.obstacleGroup.splice(1, 1);
+                    var newRand = randInteger(this.game, this.worldWidth, this.worldWidth / 2 * 3);
+                    if (getDistBetween(newRand, this.obstacleGroup[0].cactus.body.x) < 200) newRand += 200;
+                    this.obstacleGroup.push(new Cactus(this.game, newRand, 490, "cactus", 0.5, 0.5));
+                }
                 this.state = this.STATE_PLAY;
                 break;
             case this.STATE_PLAY: 
                 // play Flappy Bird game by using genetic algorithm AI+
-                
                 
                 for(var i = 0; i < this.characterGroup.length;i++){
                     //console.log(this.characterGroup[i]);
@@ -96,13 +105,14 @@ App.Main.prototype = {
                         for(var j = 0; j < this.characterGroup.length;j++){
                             //player - ground collision
                             this.playerGroundColl.push(this.game.physics.arcade.collide(this.characterGroup[j].player,this.platforms));
-                            this.characterGroup[i].player.animations.play("right");
+                            this.characterGroup[j].player.animations.play("right");
                             //player - cactus collision
                             this.playerCactusColl.push(this.game.physics.arcade.overlap(this.characterGroup[j].player, this.obstacleGroup[0].cactus,collhandler(i),null,this));
                             if(this.playerCactusColl[j]) {
                                 this.characterGroup[0].eliminate();
                                 this.characterGroup.splice(0,1)
                             }
+                            //this.GA.activateBrain(this.characterGroup[j], this.target);
                         }
                         /*
                         * obstacle updates 
@@ -116,14 +126,23 @@ App.Main.prototype = {
                         }
                         //console.log(this.characterGroup[i]); 
                         
-                       this.GA.activateBrain(this.characterGroup[i], this.target);
+                       //this.GA.activateBrain(this.characterGroup[i], this.target);
                     }
-                    
+                   // if(this.characterGroup.length != 0 && this.characterGroup[i].player.alive)
+                     //   this.GA.activateBrain(this.characterGroup[i], this.target);
+                      //console.log(this.characterGroup[i].player.alive);
                 }
-                    
+                    this.characterGroup.forEach(element => {
+                        this.GA.activateBrain(element,this.target);
+                    });
+                    if(this.characterGroup.length === 0) this.state = this.STATE_GAMEOVER;   
                 break;
             case this.STATE_GAMEOVER: 
                 // when all birds are killed evolve the population
+                this.GA.evolvePopulation();
+                this.GA.iteration++;
+
+                this.state = this.STATE_START;
                 break;
         }
 

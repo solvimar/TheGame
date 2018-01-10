@@ -56,7 +56,6 @@ GeneticAlgorithm.prototype = {
 		var targetDeltaX1 = this.normalize(target.x1, 2000) * this.SCALE_FACTOR;
 		// create an array of all inputs
 		var inputs = [targetDeltaX1, targetDeltaX1];
-		
 		// calculate outputs by activating synaptic neural network of this bird
 		var outputs = this.Population[bird.index].activate(inputs);
 			
